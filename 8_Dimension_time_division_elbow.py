@@ -14,19 +14,28 @@ MAX_K = 20
 IMPROVEMENT_THRESHOLD = 0.10  
 
 # ================= 现行方案自定义输入接口 =================
-USER_CUSTOM_SCHEME_TEXT = """
-00:00 - 06:00, 方案10，周期99s
-06:00 - 07:30, 方案2，周期114s
-07:30 - 09:00, 方案24，周期167s
-09:00 - 12:00, 方案26，周期152s
-12:00 - 14:00, 方案3，周期150s
-14:00 - 16:00, 方案4，周期152s
-16:00 - 17:00, 方案5，周期152s
-17:00 - 19:00, 方案17，周期164s
-19:00 - 20:30, 方案7，周期134s
-20:30 - 22:00, 方案8，周期130s
-22:00 - 23:59, 方案9，周期115s
-"""
+CURRENT_SIGNAL_PLAN = {
+    '现行周期方案': [
+        {'start': '00:00', 'end': '06:00', 'scheme': '方案10', 'cycle': 99, 'phase_times': {'北向全放': 25, '东向全放': 25, '西向全放': 25, '南向全放': 24}},
+        {'start': '06:00', 'end': '07:30', 'scheme': '方案2', 'cycle': 114, 'phase_times': {'北向全放': 28, '东向全放': 28, '西向全放': 30, '南向全放': 28}},
+        {'start': '07:30', 'end': '09:00', 'scheme': '方案24', 'cycle': 167, 'phase_times': {'北向全放': 46, '东向全放': 40, '西向全放': 30, '南向全放': 51}},
+        {'start': '09:00', 'end': '12:00', 'scheme': '方案26', 'cycle': 152, 'phase_times': {'北向全放': 40, '东向全放': 35, '西向全放': 30, '南向全放': 47}},
+        {'start': '12:00', 'end': '14:00', 'scheme': '方案3', 'cycle': 150, 'phase_times': {'北向全放': 45, '东向全放': 35, '西向全放': 30, '南向全放': 41}},
+        {'start': '14:00', 'end': '16:00', 'scheme': '方案4', 'cycle': 152, 'phase_times': {'北向全放': 42, '东向全放': 35, '西向全放': 30, '南向全放': 45}},
+        {'start': '16:00', 'end': '17:00', 'scheme': '方案5', 'cycle': 152, 'phase_times': {'北向全放': 44, '东向全放': 33, '西向全放': 30, '南向全放': 45}},
+        {'start': '17:00', 'end': '19:00', 'scheme': '方案17', 'cycle': 164, 'phase_times': {'北向全放': 48, '东向全放': 40, '西向全放': 27, '南向全放': 49}},
+        {'start': '19:00', 'end': '20:30', 'scheme': '方案7', 'cycle': 134, 'phase_times': {'北向全放': 34, '东向全放': 37, '西向全放': 26, '南向全放': 37}},
+        {'start': '20:30', 'end': '22:00', 'scheme': '方案8', 'cycle': 130, 'phase_times': {'北向全放': 34, '东向全放': 34, '西向全放': 28, '南向全放': 34}},
+        {'start': '22:00', 'end': '23:59', 'scheme': '方案9', 'cycle': 115, 'phase_times': {'北向全放': 30, '东向全放': 28, '西向全放': 28, '南向全放': 29}},
+    ],
+    '相位损失时间': {'北向全放': 6, '东向全放': 6, '西向全放': 6, '南向全放': 6},
+    '专属相位映射': {
+        '相位1(北向全放)': [('北向', '直行'), ('北向', '左转')],
+        '相位2(东向全放)': [('东向', '直行'), ('东向', '左转')],
+        '相位3(西向全放)': [('西向', '直行'), ('西向', '左转')],
+        '相位4(南向全放)': [('南向', '直行'), ('南向', '左转')]
+    }
+}
 
 # ================= 基础拓扑配置 =================
 INTER_ID_NAME_MAP = {
@@ -48,12 +57,12 @@ INTER_OFFSET_MAP = {
 CARDINAL_HANZI = {"E": "东向", "W": "西向", "S": "南向", "N": "北向"}
 TURN_HANZI = {1: "左转", 2: "直行"}
 
-# ================= 智能文本解析器 =================
-def parse_custom_scheme(text):
+# ================= 智能数据解析器 =================
+def parse_custom_scheme(plan_dict):
     periods = []
-    matches = re.findall(r'(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})', text)
-    for s, e in matches:
-        periods.append((s, e))
+    if '现行周期方案' in plan_dict:
+        for item in plan_dict['现行周期方案']:
+            periods.append((item['start'], item['end']))
     return periods
 
 # ================= 预处理与绘图辅助函数 =================
@@ -181,11 +190,11 @@ def fisher_optimal_partition(data_matrix, k_classes):
 def run_tod_partition(file_paths):
     print("================ Fisher 肘部法则：全自动时段划分 (分流向数据驱动) ================")
     
-    parsed_current_periods = parse_custom_scheme(USER_CUSTOM_SCHEME_TEXT)
+    parsed_current_periods = parse_custom_scheme(CURRENT_SIGNAL_PLAN)
     if parsed_current_periods:
         print(f"✅ 成功从配置区解析出 {len(parsed_current_periods)} 个现行时段设置。")
     else:
-        print("⚠️ 未从 USER_CUSTOM_SCHEME_TEXT 提取到有效的时段格式，请检查。")
+        print("⚠️ 未从 CURRENT_SIGNAL_PLAN 提取到有效的时段格式，请检查。")
 
     target_flows = ['东向直行', '东向左转', '南向直行', '南向左转', '西向直行', '西向左转', '北向直行', '北向左转']
 
